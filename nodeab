@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 var ts = require('commander'),
 	colors = require('colors'),
 	qs = require('querystring'),
@@ -38,7 +37,7 @@ ts.command('start [type]')
 					configFileFound = path.existsSync(configFile);
 
 				console.log(prefix + configFile);
-				console.log(prefix + "Config file found: %s>", configFileFound);
+				console.log(prefix + "Config file found: %s", configFileFound);
 
 
 				if (configFileFound) options = taskmanager.processConfigFile(configFile, options);
