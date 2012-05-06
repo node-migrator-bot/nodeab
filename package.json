@@ -1,14 +1,14 @@
 {
-  "name": "taskmaster",
+  "name": "nodeab",
   "description": "An AB testing master slave manager for node.",
   "keywords": ["ab", "master", "slave", "task", "manager"],
   "version": "0.0.1",
-  "homepage": "https://github.com/christopherdebeer/taskmaster",
+  "homepage": "https://github.com/christopherdebeer/nodeab",
   "author": "Christopher de Beer <christopherdebeer@gmail.com> (http://christopherdebeer.com)",
-  "licenses"      : ["MIT"],
+  "licenses": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/christopherdebeer/taskmaster.git"
+    "url": "https://github.com/christopherdebeer/nodeab.git"
   },
   "subdomain": "taskmaster",
   "scripts": {
@@ -18,7 +18,7 @@
   "engines": {
     "node": "0.6.x"
   },
-  "bin": "index.js"
+  "bin": "index.js",
   "dependencies": {
     "commander": "~0.6.0",
     "colors": "~0.6.0-1",
