@@ -10,10 +10,10 @@ var ts = require('commander'),
 	fs = require('fs'),
 	_ = require('underscore');
 
-var prefix = 'tm info'.yellow + ': '.white,
-	errPrefix = 'tm error'.red + ': '.white;
+var prefix = 'NodeAB'.yellow + ': '.white,
+	errPrefix = 'NodeAB'.red + ': '.white;
 
-ts.version('0.0.3')	
+ts.version('0.0.4')	
 	.option('-p, --port <PORT>', 'Set the port to run taskmanager on.')
 	.option('-a, --address <IP ADDRESS>', 'Set the IP Address to run server on.')
 	.option('-s, --secret <PASS PHRASE>', 'Set a secret pass-phrase for connecting to server.')
@@ -155,9 +155,17 @@ ts.command('list')
 	})
 
 
+ts.command('*').action(taskmanager.usage);
+ts.command('').action(taskmanager.usage);
+
 var taskmanager = {
 	slaveList: {},
 	slaves: {},
+	usage: function(){
+		console.log(prefix + "NodeAB " + ts.version);
+		console.log(prefix + "Usage: nodeab <command> <options>");
+		console.log(prefix + "For Help, type 'nodeab --help'");
+	},
 	processConfigFile: function (file, options) {
 		console.log(prefix + "Processing config file & options...");
 		// console.log(prefix + file, options)/
