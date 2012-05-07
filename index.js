@@ -13,7 +13,7 @@ var ts = require('commander'),
 var prefix = 'NodeAB'.green + ': '.white,
 	errPrefix = 'NodeAB'.red + ': '.white;
 
-ts.version('0.0.4-42')	
+ts.version('0.0.4-43')	
 	.option('-p, --port <PORT>', 'Set the port to run taskmanager on.')
 	.option('-a, --address <IP ADDRESS>', 'Set the IP Address to run server on.')
 	.option('-s, --secret <PASS PHRASE>', 'Set a secret pass-phrase for connecting to server.')
@@ -31,16 +31,7 @@ ts.command('start [type]')
 		var typeHandlers = {
 			"master": function (options) {
 
-				// console.log(prefix + "Start Master with options: ", options);
-				console.log(prefix + "Checking for local config.json...");
-				var configFile = path.resolve(__dirname + "/config.json"),
-					configFileFound = path.existsSync(configFile);
-
-				console.log(prefix + configFile);
-				console.log(prefix + "Config file found: %s", configFileFound);
-
-
-				if (configFileFound) options = taskmanager.processConfigFile(configFile, options);
+				options = taskmanager.processConfigFile(options);
 
 
 				// Defaults
@@ -100,7 +91,10 @@ ts.command('start [type]')
 				request.post({
 					uri: url,
 					body: "id=" + options.id + "&file=" + file + "&secret=" + options.secret
-				}, function(err, data){console.log(prefix + "Err: ",err," Response: ", data.statusCode)})
+				}, function(err, data){
+					if (err) console.log(prefix + "Err: ",err," Response: ", data.statusCode)
+					else console.log(prefix + "Response: ", data.statusCode)
+				})
 			}
 		}
 
@@ -154,6 +148,15 @@ ts.command('list')
 
 	})
 
+ts.command('config [action] [key] [value]')
+	.description('View or amend current local config settings.')
+	.action(function(action, key, value) {
+		if (typeof action === 'undefined' && typeof key === 'undefined') console.log(taskmanager.getConfigFile());
+		else {
+			console.log(prefix + "Requested action: <%s> on key: <%s> with value: <%s>", action, key, value)
+			taskmanager.editConfig(action, key, value);
+		}
+	})
 
 ts.command('*')
 	.action(function(){
@@ -167,23 +170,98 @@ var taskmanager = {
 		console.log(prefix + "Usage: nodeab <command> <options>");
 		console.log(prefix + "For Help, type 'nodeab --help'");
 	},
-	processConfigFile: function (file, options) {
-		console.log(prefix + "Processing config file & options...");
-		// console.log(prefix + file, options)/
-
-		var fileContents = JSON.parse(fs.readFileSync(file, 'utf8'));
-		// console.log(prefix + "mixing in options: ", _.pick(options, 'id', 'port', 'address', 'secret'))
-		// console.log(prefix + "options from file: ", fileContents)
-		var newOptions = _.defaults(_.pick(options, 'id', 'port', 'address', 'secret'), fileContents);
-		fs.writeFileSync(file, JSON.stringify(newOptions), 'utf8');
-
-		return newOptions;
+	getUserDir: function(){
+		return process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
 	},
-	addSlave: function(id, file) {
-		console.log(prefix + 'Attaching Slave process <%s>', id);
-		taskmanager.slaveList[id] = file;
-		taskmanager.slaves[id] = require(file);
-		// taskmanager.slaves[id].emit('start', 1, 2)
+	updateConfigFile: function(options) {
+		
+		console.log(prefix + "Processing config file & options...");
+		options = _.pick(options, 'id', 'port', 'address', 'secret', 'slaves');
+		var configFile = taskmanager.getConfigFile(),
+			file = path.resolve(taskmanager.getUserDir() + "/.nodeab.json");
+
+		if (configFile) {
+			options = _.defaults(options, configFile);
+			fs.writeFileSync(file, JSON.stringify(options), 'utf8');
+		} else {
+			console.log(prefix + "Creating new local config file: " + ".nodeab.json ".yellow);
+			fs.writeFileSync(file, JSON.stringify(options), 'utf8');
+		}
+
+		return options;
+	},
+	overwriteConfigFile: function (options) {
+		var file = path.resolve(taskmanager.getUserDir() + "/.nodeab.json");
+		fs.writeFileSync(file, JSON.stringify(options), 'utf8');
+	},
+	editConfig: function(action, key, value) {
+
+		var config = taskmanager.getConfigFile() || {};
+
+		if (action === 'add') {			
+			if (typeof config[key + "s"] === 'undefined') {
+				console.log(prefix + "Adding 1st %s <%s>", key, value)
+				config[key + "s"] = [value];
+			} else {
+				console.log(prefix + "Adding %s <%s>", key, value)
+				config[key + "s"].push(value);
+			}		
+		} else if (action === 'set') {
+			console.log(prefix + "Setting key <%s> to value <%s>", key, value);
+			config[key] = value;
+		} else if (action === 'rm') {
+			console.log(prefix + "Removing key <%s>", key);
+			delete config[key]
+		}
+
+		taskmanager.overwriteConfigFile(config);
+	},
+	getConfigFile: function(){
+		console.log(prefix + "Checking for local .nodeab.json");
+		var file = path.resolve(taskmanager.getUserDir() + "/.nodeab.json"),
+			configFileFound = path.existsSync(file);
+		console.log(prefix + "Config file found: %s", configFileFound);
+		if (configFileFound) {
+			return JSON.parse(fs.readFileSync(file, 'utf8'));
+		}
+		return false;
+	},
+	processConfigFile: function (options) {		
+		return taskmanager.updateConfigFile(options);
+	},
+	addSlave: function(req, res) {
+		var body = '';
+		req.on('data', function (data) {
+            body += data;
+        });
+        req.on('end', function () {
+            var POST = qs.parse(body);
+			// console.log(prefix + "POST Data: ", POST);
+
+			if (POST.secret === ts.secret && typeof POST.id !== 'undefined') {
+				console.log(prefix + "Slave authentication successfull.")
+
+				if (path.existsSync(POST.file)) {
+					console.log(prefix + 'Slave file successfully found by Master.')
+
+					console.log(prefix + 'Attaching Slave process <%s>', POST.id);
+					taskmanager.slaveList[POST.id] = POST.file;
+					taskmanager.slaves[POST.id] = require(POST.file);
+					res.writeHead(200, {'Content-Type': 'text/html'});
+					res.end("OK");
+				} else {
+					console.log(prefix + 'Slave file not found by Master <%s>', POST.file)
+					res.writeHead(404, {'Content-Type': 'text/html'});
+					res.end("Slave file not found by Master.");
+				}
+			} else {
+				console.log(prefix + "Slave authentication failed.")
+	        	res.writeHead(401, {'Content-Type': 'text/html'});
+				res.end("Secret doesnt match Master.");
+			}
+
+
+        });
 	},
 	getSlaves: function() {
 
@@ -219,36 +297,7 @@ var taskmanager = {
 			} else if (/addSlave/.test(req.url)) {
 				console.log(prefix + "Slave tried to attach to Master.");
 				
-				var body = '';
-				req.on('data', function (data) {
-		            body += data;
-		        });
-		        req.on('end', function () {
-		            var POST = qs.parse(body);
-					// console.log(prefix + "POST Data: ", POST);
-
-					if (POST.secret === ts.secret && typeof POST.id !== 'undefined') {
-						console.log(prefix + "Slave authentication successfull.")
-
-						if (path.existsSync(POST.file)) {
-							console.log(prefix + 'Slave file successfully found by Master.')
-
-							taskmanager.addSlave(POST.id, POST.file);
-							res.writeHead(200, {'Content-Type': 'text/html'});
-							res.end("OK");
-						} else {
-							console.log(prefix + 'Slave file not found by Master <%s>', POST.file)
-							res.writeHead(404, {'Content-Type': 'text/html'});
-							res.end("Slave file not found by Master.");
-						}
-					} else {
-						console.log(prefix + "Slave authentication failed.")
-			        	res.writeHead(401, {'Content-Type': 'text/html'});
-						res.end("Secret doesnt match Master.");
-					}
-
-
-		        });
+				taskmanager.addSlave(req, res);
 				
 			} else if (typeof q.secret !== 'undefined' && q.secret === ts.secret) {
 				console.log(prefix + "Admin authentication " + 'successful'.yellow);
