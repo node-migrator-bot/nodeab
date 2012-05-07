@@ -2,7 +2,7 @@
   "name": "nodeab",
   "description": "An AB testing master slave manager for node.",
   "keywords": ["ab", "master", "slave", "task", "manager"],
-  "version": "0.0.1-2",
+  "version": "0.0.3",
   "homepage": "https://github.com/christopherdebeer/nodeab",
   "author": "Christopher de Beer <christopherdebeer@gmail.com> (http://christopherdebeer.com)",
   "licenses": ["MIT"],
