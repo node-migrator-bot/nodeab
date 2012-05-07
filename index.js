@@ -13,7 +13,7 @@ var ts = require('commander'),
 var prefix = 'NodeAB'.green + ': '.white,
 	errPrefix = 'NodeAB'.red + ': '.white;
 
-ts.version('0.0.4-41')	
+ts.version('0.0.4-42')	
 	.option('-p, --port <PORT>', 'Set the port to run taskmanager on.')
 	.option('-a, --address <IP ADDRESS>', 'Set the IP Address to run server on.')
 	.option('-s, --secret <PASS PHRASE>', 'Set a secret pass-phrase for connecting to server.')
@@ -104,7 +104,7 @@ ts.command('start [type]')
 			}
 		}
 
-		typeHandlers[type](options.parent);
+		typeHandlers[type.toLowerCase()](options.parent);
 
 	})
 
@@ -125,7 +125,7 @@ ts.command('stop [type]')
 			}
 		}
 
-		typeHandlers[type](options.parent);
+		typeHandlers[type.toLowerCase()](options.parent);
 
 	})
 
