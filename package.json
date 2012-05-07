@@ -14,7 +14,7 @@
     "node": "0.6.x"
   },
   "bin": {
-    "nodeab": "nodeab"
+    "nodeab": "index.js"
   },
   "dependencies": {
     "commander": "0.6.0",
