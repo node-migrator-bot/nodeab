@@ -72,7 +72,7 @@ ts.command('start [type]')
 						: (typeof options.id === 'undefined') 				? 'No Id provided for Slave to run as.'
 						: (typeof options.file === 'undefined') 			? 'No File provided for Slave to run.'
 						: (typeof options.port === 'undefined')				? 'No IP address provided for Slave to find Master process on.'
-						: (!path.existsSync(file)) 	? 'File <' + __dirname +"\\"+ options.file + '> doesn\'t exist'
+						: (!fs.existsSync(file)) 	? 'File <' + __dirname +"\\"+ options.file + '> doesn\'t exist'
 						: false
 						);
 				})(options);
@@ -219,7 +219,7 @@ var taskmanager = {
 	getConfigFile: function(){
 		console.log(prefix + "Checking for local .nodeab.json");
 		var file = path.resolve(taskmanager.getUserDir() + "/.nodeab.json"),
-			configFileFound = path.existsSync(file);
+			configFileFound = fs.existsSync(file);
 		console.log(prefix + "Config file found: %s", configFileFound);
 		if (configFileFound) {
 			return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -241,7 +241,7 @@ var taskmanager = {
 			if (POST.secret === ts.secret && typeof POST.id !== 'undefined') {
 				console.log(prefix + "Slave authentication successfull.")
 
-				if (path.existsSync(POST.file)) {
+				if (fs.existsSync(POST.file)) {
 					console.log(prefix + 'Slave file successfully found by Master.')
 
 					console.log(prefix + 'Attaching Slave process <%s>', POST.id);
